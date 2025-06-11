@@ -4,7 +4,7 @@
   "version": "${mod_version}",
 
   "name": "Charmony Loot",
-  "description": "Adds extra loot to the world.",
+  "description": "Adds secret chests found within structures and caves.",
   "authors": [
     "svenhjol"
   ],

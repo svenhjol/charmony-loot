@@ -1,6 +1,5 @@
 package svenhjol.charmony.loot;
 
-import net.minecraft.resources.ResourceLocation;
 import svenhjol.charmony.api.core.ModDefinition;
 import svenhjol.charmony.api.core.Side;
 import svenhjol.charmony.core.base.Mod;
@@ -9,7 +8,7 @@ import svenhjol.charmony.core.base.Mod;
     id = LootMod.ID,
     sides = {Side.Client, Side.Common},
     name = "Loot",
-    description = "Adds loot to the world.")
+    description = "Adds secret chests found within structures and caves.")
 public final class LootMod extends Mod {
     public static final String ID = "charmony-loot";
     private static LootMod instance;
@@ -21,9 +20,5 @@ public final class LootMod extends Mod {
             instance = new LootMod();
         }
         return instance;
-    }
-
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(ID, path);
     }
 }
