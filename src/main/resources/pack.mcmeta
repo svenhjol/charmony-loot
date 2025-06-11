@@ -1,0 +1,6 @@
+{
+  "pack": {
+    "description": "Charmony Loot resources",
+    "pack_format": ${pack_version}
+  }
+}

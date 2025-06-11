@@ -1,0 +1,12 @@
+{
+  "advancements.charmony.unlocked_item_chest.title": "Chest Test",
+  "advancements.charmony.unlocked_item_chest.description": "Successfully unlock a stone chest using items",
+  "advancements.charmony.unlocked_timed_chest.title": "Patience",
+  "advancements.charmony.unlocked_timed_chest.description": "Successfully unlock a stone chest at the correct time",
+  "gui.charmony.clock.time": "Time?",
+  "gui.charmony.moon.full": "Full?",
+  "gui.charmony.moon.new": "New?",
+  "gui.charmony.moon.waning": "Waning?",
+  "gui.charmony.moon.waxing": "Waxing?",
+  "gui.charmony.unlock": "Unlock"
+}

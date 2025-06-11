@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "svenhjol.charmony.loot.common.mixins",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "${refmap_file}",
+  "plugin": "svenhjol.charmony.loot.common.mixins.CommonMixinConfig",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+    "secret_chests.NetherFortressPiecesMixin",
+    "secret_chests.SinglePoolElementMixin",
+    "secret_chests.StructureTemplateMixin",
+    "secret_chests.TemplateStructurePieceMixin"
+  ]
+}
