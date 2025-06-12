@@ -30,7 +30,7 @@ public class EnchantedItemPuzzleMenuProvider implements SecretChestPuzzleMenuPro
         var itemOpt = itemRegistry.getRandomElementOf(Tags.ENCHANTABLE_ITEMS, random);
         if (itemOpt.isEmpty()) return Optional.empty();
 
-        var level = 5 + (5 * amplifier);
+        var level = 3 + (5 * amplifier);
         var stack = EnchantmentHelper.enchantItem(
             random,
             new ItemStack(itemOpt.get()),

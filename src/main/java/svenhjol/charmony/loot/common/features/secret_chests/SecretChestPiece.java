@@ -17,6 +17,8 @@ import svenhjol.charmony.api.secret_chests.SecretChestPlacement;
 import svenhjol.charmony.api.secret_chests.SecretChestsApi;
 import svenhjol.charmony.core.base.Log;
 
+import java.util.ArrayList;
+
 public class SecretChestPiece extends StructurePiece {
     private SecretChestDefinition definition;
 
@@ -90,28 +92,36 @@ public class SecretChestPiece extends StructurePiece {
         } else {
             // For surface and cave placements, look for places to place the chest in a range around the structure start pos.
             // This is a success if the target block is air or water and there is a solid block beneath the target pos.
-            for (var y = minYOffset; y < maxYOffset; y++) {
-                for (var x = -xzOffset; x < xzOffset; x++) {
-                    for (var z = -xzOffset; z < xzOffset; z++) {
-                        var tryPos = offsetPos.offset(x, y, z);
-                        var tryState = level.getBlockState(tryPos);
-                        var tryStateBelow = level.getBlockState(tryPos.below());
-                        var fluidState = level.getFluidState(tryPos);
+            var tried = new ArrayList<>();
+            for (int i = 1; i < xzOffset; i++) {
+                for (var y = maxYOffset; y > minYOffset; y--) {
+                    for (var x = -i; x < i + 1; x++) {
+                        for (var z = -i; z < i + 1; z++) {
+                            var tryPos = offsetPos.offset(x, y, z);
+                            if (tried.contains(tryPos)) return;
 
-                        var isAir = tryState.isAir();
-                        var isNotSolidRender = !tryState.isSolidRender();
-                        var isWater = fluidState.is(Fluids.WATER);
+                            var tryState = level.getBlockState(tryPos);
+                            var tryStateBelow = level.getBlockState(tryPos.below());
+                            var fluidState = level.getFluidState(tryPos);
 
-                        if (tryStateBelow.isSolidRender() && (isAir || isWater || isNotSolidRender)) {
-                            this.boundingBox = new BoundingBox(tryPos);
-                            if (createChest(definition, level, this.boundingBox, random, tryPos, isWater)) {
-                                log().debug("Placed chest using surface/cave XZ offsets at " + pos);
+                            var isAir = tryState.isAir();
+                            var isNotSolidRender = !tryState.isSolidRender();
+                            var isWater = fluidState.is(Fluids.WATER);
+
+                            if (tryStateBelow.isSolidRender() && (isAir || isWater || isNotSolidRender)) {
+                                this.boundingBox = new BoundingBox(tryPos);
+                                if (createChest(definition, level, this.boundingBox, random, tryPos, isWater)) {
+                                    log().debug("Placed chest using surface/cave XZ offsets at " + pos);
+                                }
+                                tried.clear();
+                                return;
                             }
-                            return;
+                            tried.add(tryPos);
                         }
                     }
                 }
             }
+            tried.clear();
 
             // Let the definition do worldgen here.
             var generated = definition.generateSurface(level, pos.below(), random);

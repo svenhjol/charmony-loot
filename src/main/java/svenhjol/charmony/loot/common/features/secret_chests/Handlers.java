@@ -3,6 +3,7 @@ package svenhjol.charmony.loot.common.features.secret_chests;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
@@ -13,8 +14,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.structures.NetherFortressPieces;
+import net.minecraft.world.level.storage.loot.LootTable;
 import svenhjol.charmony.api.secret_chests.SecretChestDefinition;
 import svenhjol.charmony.api.secret_chests.SecretChestPlacement;
+import svenhjol.charmony.api.secret_chests.SecretChestSideEffects;
 import svenhjol.charmony.api.secret_chests.SecretChestsApi;
 import svenhjol.charmony.core.base.Setup;
 import svenhjol.charmony.core.helpers.TagHelper;
@@ -34,6 +37,46 @@ public class Handlers extends Setup<SecretChests> {
 
     public Handlers(SecretChests feature) {
         super(feature);
+    }
+
+    public Optional<SecretChestDefinition> getDefinition(String name) {
+        return Optional.ofNullable(feature().registers.secretChestDefinitions.get(name));
+    }
+
+    public Optional<ResourceKey<LootTable>> randomLootTable(SecretChestDefinition definition, RandomSource random) {
+        var lootTables = new ArrayList<>(definition.lootTables());
+
+        if (lootTables.isEmpty()) {
+            log().debug("No loot tables for secret chest definition: " + definition);
+            return Optional.empty();
+        }
+
+        Util.shuffle(lootTables, random);
+        return Optional.of(lootTables.getFirst());
+    }
+
+    public Optional<SecretChestSideEffects> randomSideEffect(SecretChestDefinition definition, RandomSource random) {
+        var sideEffects = new ArrayList<>(definition.sideEffects());
+
+        if (sideEffects.isEmpty()) {
+            log().debug("No side effects for secret chest definition: " + definition);
+            return Optional.empty();
+        }
+
+        Util.shuffle(sideEffects, random);
+        return Optional.of(sideEffects.getFirst());
+    }
+
+    public Optional<String> randomPuzzleMenuId(SecretChestDefinition definition, RandomSource random) {
+        var puzzleMenus = new ArrayList<>(definition.puzzleMenus());
+
+        if (puzzleMenus.isEmpty()) {
+            log().debug("No puzzle menu IDs for secret chest definition: " + definition);
+            return Optional.empty();
+        }
+
+        Util.shuffle(puzzleMenus, random);
+        return Optional.of(puzzleMenus.getFirst());
     }
 
     public void createNetherFortressChest(StructurePiece piece, WorldGenLevel level, RandomSource random) {
@@ -88,7 +131,7 @@ public class Handlers extends Setup<SecretChests> {
         var flower = values.getFirst();
 
         var heightMap = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE_WG, pos);
-        var radius = random.nextBoolean() ? 7 : 8;
+        var radius = random.nextIntBetweenInclusive(6, 10);
         var heightTolerance = 5;
 
         for (int i = 0; i < 360; i += (28 + random.nextInt(5))) {

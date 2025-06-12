@@ -1,7 +1,6 @@
 package svenhjol.charmony.loot.common.features.secret_chests;
 
 import com.mojang.serialization.Codec;
-import net.minecraft.Util;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
@@ -19,7 +18,6 @@ import svenhjol.charmony.core.base.Setup;
 import svenhjol.charmony.core.common.CommonRegistry;
 import svenhjol.charmony.loot.common.features.chest_puzzles.ChestPuzzles;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -62,17 +60,12 @@ public class Registers extends Setup<SecretChests> {
                 return false;
             }
 
-            var lootTables = new ArrayList<>(definition.lootTables());
-            var menus = new ArrayList<>(definition.puzzleMenus());
-            var sideEffects = new ArrayList<>(definition.sideEffects());
+            var lootTable = SecretChests.feature().handlers.randomLootTable(definition, random).orElse(null);
 
-            if (lootTables.isEmpty()) {
+            if (lootTable == null) {
                 log().debug("No loot tables for secret chest");
                 return false;
             }
-
-            Util.shuffle(lootTables, random);
-            var lootTable = lootTables.getFirst();
 
             var state = StructurePiece.reorient(level, pos, block.defaultBlockState());
             if (waterlogged) {
@@ -94,27 +87,11 @@ public class Registers extends Setup<SecretChests> {
             // Add the loot table to the "unlocked loot table" property so that
             // if the chest is broken it won't drop anything.
             if (Mod.getSidedFeature(ChestPuzzles.class).enabled()) {
-                String menu = "";
-                if (!menus.isEmpty()) {
-                    // Add a random puzzle menu to the chest.
-                    Util.shuffle(menus, random);
-                    menu = menus.getFirst();
-                }
-
-                var providers = ChestPuzzles.feature().registers.puzzleMenuProviders;
-
-                if (!menu.isEmpty() && providers.containsKey(menu)) {
-                    chest.lock(menu);
-                    chest.setUnlockedLootTable(lootTable);
-                    chest.setDifficultyAmplifier(definition.difficultyAmplifier());
-
-                    if (!sideEffects.isEmpty()) {
-                        // Add a random side-effect to the chest.
-                        Util.shuffle(sideEffects, random);
-                        chest.setSideEffect(sideEffects.getFirst());
-                    }
+                if (!definition.puzzleMenus().isEmpty()) {
+                    chest.setCustomDefinition(definition.name());
+                    chest.lock();
                 } else {
-                    log().warn("No provider matching menu: " + menu);
+                    log().warn("No menu providers");
                 }
             }
 

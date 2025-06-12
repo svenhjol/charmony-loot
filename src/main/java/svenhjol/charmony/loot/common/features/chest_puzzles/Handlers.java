@@ -23,11 +23,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.phys.Vec3;
 import svenhjol.charmony.api.chest_puzzles.ChestPuzzleMenu;
+import svenhjol.charmony.api.secret_chests.SecretChestDefinition;
 import svenhjol.charmony.api.secret_chests.SecretChestPuzzleMenuData;
 import svenhjol.charmony.api.secret_chests.SecretChestSideEffects;
 import svenhjol.charmony.api.stone_chests.StoneChestBlockEntity;
@@ -35,6 +37,7 @@ import svenhjol.charmony.api.stone_chests.StoneChestMaterial;
 import svenhjol.charmony.core.base.Setup;
 import svenhjol.charmony.core.helpers.TagHelper;
 import svenhjol.charmony.core.helpers.WorldHelper;
+import svenhjol.charmony.loot.common.features.secret_chests.SecretChests;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,20 +54,35 @@ public class Handlers extends Setup<ChestPuzzles> {
     public Optional<ChestPuzzleMenu> getMenuProvider(ServerLevel level, StoneChestBlockEntity chest, int syncId, Inventory inventory, StoneChestMaterial material) {
         if (!(chest instanceof RandomizableContainerBlockEntity lootChest)) return Optional.empty();
 
-        var puzzleMenuId = chest.puzzleMenuId();
         var pos = lootChest.getBlockPos();
+        var random = RandomSource.create(WorldHelper.seedFromBlockPos(pos));
+        var def = SecretChests.feature().handlers.getDefinition(chest.getCustomDefinition()).orElse(null);
+        if (def == null) {
+            feature().log().warn("Chest definition not found, unlocking chest");
+            chest.unlock();
+            return Optional.empty();
+        }
+
+        var menuId = SecretChests.feature().handlers.randomPuzzleMenuId(def, random).orElse(null);
+        if (menuId == null) {
+            // No menu ID found, unlock chest and return.
+            feature().log().warn("Menus not found, unlocking chest");
+            chest.unlock();
+            return Optional.empty();
+        }
 
         var providers = feature().registers.puzzleMenuProviders;
-        if (!providers.containsKey(puzzleMenuId)) {
-            // No puzzle menu provider, just unlock the chest.
-            feature().log().warn("Provider " + puzzleMenuId + " not found, unlocking chest");
+        if (!providers.containsKey(menuId)) {
+            // No puzzle menu provider found, unlock chest and return.
+            feature().log().warn("Menu provider " + menuId + " not found, unlocking chest");
             chest.unlock();
+            return Optional.empty();
         }
 
         if (chest.isLocked()) {
             // Generate a seed based on this position.
             var seed = WorldHelper.seedFromBlockPos(pos);
-            var provider = providers.get(puzzleMenuId);
+            var provider = providers.get(menuId);
             var menuData = new SecretChestPuzzleMenuData();
 
             menuData.syncId = syncId;
@@ -74,13 +92,13 @@ public class Handlers extends Setup<ChestPuzzles> {
             menuData.material = material;
             menuData.seed = seed;
             menuData.random = RandomSource.create(seed);
-            menuData.difficultyAmplifier = chest.getDifficultyAmplifier();
+            menuData.difficultyAmplifier = def.difficultyAmplifier();
 
             var menu = provider.getMenuProvider(menuData);
             if (menu.isPresent()) {
                 return menu;
             } else {
-                feature().log().warn("Menu " + puzzleMenuId + " not found, unlocking");
+                feature().log().warn("Menu data for provider " + menuId + " not found, unlocking chest");
                 chest.unlock();
             }
         }
@@ -91,19 +109,28 @@ public class Handlers extends Setup<ChestPuzzles> {
     public void solve(Container container, Player player, StoneChestBlockEntity chest, boolean valid) {
         if (!(chest instanceof RandomizableContainerBlockEntity lootChest)) return;
 
-        if (valid || player.getAbilities().instabuild) {
+        var random = RandomSource.create(WorldHelper.seedFromBlockPos(lootChest.getBlockPos()));
+        var def = SecretChests.feature().handlers.getDefinition(chest.getCustomDefinition()).orElse(null);
+
+        if (def != null && (valid || player.getAbilities().instabuild)) {
             // Consume any items held in the container.
             container.clearContent();
 
             // If it was a difficult challenge then give the player luck to modify the loot rolls.
-            var difficultyAmplifier = chest.getDifficultyAmplifier();
+            var difficultyAmplifier = def.difficultyAmplifier();
             if (difficultyAmplifier > 1) {
                 setPlayerLuck(player, difficultyAmplifier - 2);
             }
 
             // Get the stored "unlocked" loot table from the chest and set it as the primary loot table.
             // When the chest is next opened the loot will be generated.
-            lootChest.setLootTable(chest.getUnlockedLootTable());
+            var lootTable = SecretChests.feature().handlers.randomLootTable(def, random).orElse(null);
+            if (lootTable == null) {
+                feature().log().warn("Could not load custom loot table, falling back to simple dungeon");
+                lootTable = BuiltInLootTables.SIMPLE_DUNGEON;
+            }
+
+            lootChest.setLootTable(lootTable);
             chest.unlock();
 
             // Do advancements.
@@ -112,31 +139,31 @@ public class Handlers extends Setup<ChestPuzzles> {
             }
 
             player.openMenu((MenuProvider) chest);
+            return;
+        }
 
-        } else {
-            // Let the container decide what to do with the container items.
-            player.containerMenu.removed(player);
+        // Let the container decide what to do with the container items.
+        player.containerMenu.removed(player);
 
-            // Unlock the chest and execute side-effects.
-            lootChest.setLootTable(Tags.LOOT_TRASH);
-            chest.unlock();
-            var result = doSideEffects(player, player.level(), lootChest.getBlockPos(), chest);
+        // Unlock the chest and execute side-effects.
+        lootChest.setLootTable(Tags.LOOT_TRASH);
+        chest.unlock();
+        var result = doSideEffects(player, player.level(), lootChest.getBlockPos(), def, random);
 
-            if (!result) {
-                player.openMenu((MenuProvider) chest);
-            }
+        if (!result) {
+            player.openMenu((MenuProvider) chest);
         }
     }
 
-    public boolean doSideEffects(Player player, Level level, BlockPos pos, StoneChestBlockEntity chest) {
-        var amplifier = chest.getDifficultyAmplifier();
-        var sideEffect = chest.getSideEffects();
+    public boolean doSideEffects(Player player, Level level, BlockPos pos, SecretChestDefinition definition, RandomSource random) {
+        var amplifier = definition.difficultyAmplifier();
+        var sideEffect = SecretChests.feature().handlers.randomSideEffect(definition, random).orElse(null);
 
-        if (sideEffect == SecretChestSideEffects.Nothing) {
+        if (sideEffect == null || sideEffect == SecretChestSideEffects.Nothing) {
             return false;
         }
 
-        switch (chest.getSideEffects()) {
+        switch (sideEffect) {
             case SpawnOverworldMonsters -> spawnMonsters(Tags.OVERWORLD_MONSTERS, player, level, pos, amplifier);
             case SpawnNetherMonsters -> spawnMonsters(Tags.NETHER_MONSTERS, player, level, pos, amplifier);
             case SpawnEndMonsters -> spawnMonsters(Tags.END_MONSTERS, player, level, pos, amplifier);

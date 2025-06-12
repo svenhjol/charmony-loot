@@ -59,7 +59,7 @@ public class Providers extends Setup<SecretChests> implements SecretChestDefinit
 
             @Override
             public Pair<Integer, Integer> height() {
-                return Pair.of(25, 50);
+                return Pair.of(30, 55);
             }
 
             @Override
@@ -89,6 +89,11 @@ public class Providers extends Setup<SecretChests> implements SecretChestDefinit
             @Override
             public void decorateSurface(WorldGenLevel level, BlockPos pos, RandomSource random) {
                 feature().handlers.createFlowerRing(level, pos, random, Tags.FLOWER_RING_FOR_SURFACE);
+            }
+
+            @Override
+            public int fallbackXZOffset() {
+                return 16;
             }
         };
     }
@@ -123,8 +128,6 @@ public class Providers extends Setup<SecretChests> implements SecretChestDefinit
             @Override
             public List<ResourceKey<LootTable>> lootTables() {
                 return List.of(
-                    Tags.LOOT_EMERALDS,
-                    Tags.LOOT_GOLD,
                     Tags.LOOT_BOOKS,
                     Tags.LOOT_ILLAGERS,
                     Tags.LOOT_ORES,
@@ -152,6 +155,11 @@ public class Providers extends Setup<SecretChests> implements SecretChestDefinit
             @Override
             public void decorateSurface(WorldGenLevel level, BlockPos pos, RandomSource random) {
                 feature().handlers.createFlowerRing(level, pos, random, Tags.FLOWER_RING_FOR_DEEPSLATE);
+            }
+
+            @Override
+            public int fallbackXZOffset() {
+                return 16;
             }
         };
     }
@@ -263,7 +271,6 @@ public class Providers extends Setup<SecretChests> implements SecretChestDefinit
             public List<ResourceKey<LootTable>> lootTables() {
                 return List.of(
                     Tags.LOOT_EMERALDS,
-                    Tags.LOOT_GOLD,
                     Tags.LOOT_ILLAGERS,
                     Tags.LOOT_TREASURE1,
                     Tags.LOOT_TREASURE2

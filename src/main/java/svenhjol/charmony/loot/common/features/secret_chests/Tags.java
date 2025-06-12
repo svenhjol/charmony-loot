@@ -9,13 +9,13 @@ import svenhjol.charmony.core.Charmony;
 
 public final class Tags {
     public static final TagKey<Block> FLOWER_RING_FOR_BEDROCK = TagKey.create(Registries.BLOCK,
-        Charmony.id("flower_ring/bedrock"));
+        Charmony.id("flower_rings/bedrock"));
 
     public static final TagKey<Block> FLOWER_RING_FOR_DEEPSLATE = TagKey.create(Registries.BLOCK,
-        Charmony.id("flower_ring/deepslate"));
+        Charmony.id("flower_rings/deepslate"));
 
     public static final TagKey<Block> FLOWER_RING_FOR_SURFACE = TagKey.create(Registries.BLOCK,
-        Charmony.id("flower_ring/surface"));
+        Charmony.id("flower_rings/surface"));
 
     public static final TagKey<Block> GENERATES_BASTION_CHESTS = TagKey.create(Registries.BLOCK,
         Charmony.id("generates_bastion_chests"));
