@@ -21,6 +21,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -48,8 +50,10 @@ public class Handlers extends Setup<ChestPuzzles> {
     }
 
     public Optional<ChestPuzzleMenu> getMenuProvider(ServerLevel level, StoneChestBlockEntity chest, int syncId, Inventory inventory, StoneChestMaterial material) {
+        if (!(chest instanceof BlockEntity lootChest)) return Optional.empty();
+
         var puzzleMenuId = chest.puzzleMenuId();
-        var pos = chest.getBlockPos();
+        var pos = lootChest.getBlockPos();
 
         var providers = feature().registers.puzzleMenuProviders;
         if (!providers.containsKey(puzzleMenuId)) {
@@ -86,6 +90,8 @@ public class Handlers extends Setup<ChestPuzzles> {
     }
 
     public void solve(Container container, Player player, StoneChestBlockEntity chest, boolean valid) {
+        if (!(chest instanceof RandomizableContainerBlockEntity lootChest)) return;
+
         if (valid || player.getAbilities().instabuild) {
             // Consume any items held in the container.
             container.clearContent();
@@ -98,7 +104,7 @@ public class Handlers extends Setup<ChestPuzzles> {
 
             // Get the stored "unlocked" loot table from the chest and set it as the primary loot table.
             // When the chest is next opened the loot will be generated.
-            chest.setLootTable(chest.getUnlockedLootTable());
+            lootChest.setLootTable(chest.getUnlockedLootTable());
             chest.unlock();
 
             // Do advancements.
@@ -113,9 +119,9 @@ public class Handlers extends Setup<ChestPuzzles> {
             player.containerMenu.removed(player);
 
             // Unlock the chest and execute side-effects.
-            chest.setLootTable(Tags.LOOT_TRASH);
+            lootChest.setLootTable(Tags.LOOT_TRASH);
             chest.unlock();
-            var result = doSideEffects(player, player.level(), chest.getBlockPos(), chest);
+            var result = doSideEffects(player, player.level(), lootChest.getBlockPos(), chest);
 
             if (!result) {
                 player.openMenu((MenuProvider) chest);

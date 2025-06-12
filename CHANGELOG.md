@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3
+
+- Do manual casting to vanilla chest block entity.
+
 ## 1.0.2
 
 - Update description and icon.

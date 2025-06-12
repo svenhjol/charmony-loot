@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import net.minecraft.Util;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
@@ -82,42 +83,46 @@ public class Registers extends Setup<SecretChests> {
             }
 
             level.setBlock(pos, state, 2);
-            if (level.getBlockEntity(pos) instanceof StoneChestBlockEntity chest) {
+            if (!(level.getBlockEntity(pos) instanceof StoneChestBlockEntity chest)) {
+                return false;
+            }
+            if (!(chest instanceof RandomizableContainerBlockEntity lootChest)) {
+                return false;
+            }
 
-                // If the puzzles feature is enabled then add a puzzle to the chest entity.
-                // Add the loot table to the "unlocked loot table" property so that
-                // if the chest is broken it won't drop anything.
-                if (Mod.getSidedFeature(ChestPuzzles.class).enabled()) {
-                    String menu = "";
-                    if (!menus.isEmpty()) {
-                        // Add a random puzzle menu to the chest.
-                        Util.shuffle(menus, random);
-                        menu = menus.getFirst();
-                    }
-
-                    var providers = ChestPuzzles.feature().registers.puzzleMenuProviders;
-
-                    if (!menu.isEmpty() && providers.containsKey(menu)) {
-                        chest.lock(menu);
-                        chest.setUnlockedLootTable(lootTable);
-                        chest.setDifficultyAmplifier(definition.difficultyAmplifier());
-
-                        if (!sideEffects.isEmpty()) {
-                            // Add a random side-effect to the chest.
-                            Util.shuffle(sideEffects, random);
-                            chest.setSideEffect(sideEffects.getFirst());
-                        }
-                    } else {
-                        log().warn("No provider matching menu: " + menu);
-                    }
+            // If the puzzles feature is enabled then add a puzzle to the chest entity.
+            // Add the loot table to the "unlocked loot table" property so that
+            // if the chest is broken it won't drop anything.
+            if (Mod.getSidedFeature(ChestPuzzles.class).enabled()) {
+                String menu = "";
+                if (!menus.isEmpty()) {
+                    // Add a random puzzle menu to the chest.
+                    Util.shuffle(menus, random);
+                    menu = menus.getFirst();
                 }
 
-                // If the puzzles feature isn't enabled or has failed then the chest
-                // will not be locked. Set the custom loot table directly.
-                if (!chest.isLocked()) {
-                    chest.setLootTable(lootTable);
-                    chest.setChanged();
+                var providers = ChestPuzzles.feature().registers.puzzleMenuProviders;
+
+                if (!menu.isEmpty() && providers.containsKey(menu)) {
+                    chest.lock(menu);
+                    chest.setUnlockedLootTable(lootTable);
+                    chest.setDifficultyAmplifier(definition.difficultyAmplifier());
+
+                    if (!sideEffects.isEmpty()) {
+                        // Add a random side-effect to the chest.
+                        Util.shuffle(sideEffects, random);
+                        chest.setSideEffect(sideEffects.getFirst());
+                    }
+                } else {
+                    log().warn("No provider matching menu: " + menu);
                 }
+            }
+
+            // If the puzzles feature isn't enabled or has failed then the chest
+            // will not be locked. Set the custom loot table directly.
+            if (!chest.isLocked()) {
+                lootChest.setLootTable(lootTable);
+                lootChest.setChanged();
             }
 
             log().debug("Generated " + material.getSerializedName() + " chest at " + pos);
