@@ -21,7 +21,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -50,7 +49,7 @@ public class Handlers extends Setup<ChestPuzzles> {
     }
 
     public Optional<ChestPuzzleMenu> getMenuProvider(ServerLevel level, StoneChestBlockEntity chest, int syncId, Inventory inventory, StoneChestMaterial material) {
-        if (!(chest instanceof BlockEntity lootChest)) return Optional.empty();
+        if (!(chest instanceof RandomizableContainerBlockEntity lootChest)) return Optional.empty();
 
         var puzzleMenuId = chest.puzzleMenuId();
         var pos = lootChest.getBlockPos();
